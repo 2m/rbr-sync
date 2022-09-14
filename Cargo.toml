@@ -1,0 +1,10 @@
+[package]
+name = "rbr-sync"
+version = "0.1.0"
+edition = "2021"
+
+[workspace]
+
+[dependencies]
+rbr-sync-lib = { path = "rbr-sync-lib" }
+tokio = { version = "1.21.1", features = ["full"] }
