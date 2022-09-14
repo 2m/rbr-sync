@@ -192,10 +192,9 @@ impl RbrSync {
                                 tag.clone(),
                             ))
                             .clicked()
+                            && !self.selected_tags.insert(tag.clone())
                         {
-                            if !self.selected_tags.insert(tag.clone()) {
-                                self.selected_tags.remove(&tag);
-                            }
+                            self.selected_tags.remove(&tag);
                         }
                     }
                 });
@@ -209,7 +208,7 @@ impl RbrSync {
         ui.end_row();
 
         if ui.button("Write").clicked() {
-            write_stages(&self);
+            write_stages(self);
         }
     }
 }
@@ -227,7 +226,7 @@ fn fetch_stages(token: String, db_id: String, tx: Sender<Vec<Stage>>, ctx: egui:
 }
 
 fn write_stages(rbr_sync: &RbrSync) {
-    let mut favorites = Ini::load_from_file(rbr_sync.favorites_file.clone()).unwrap_or(Ini::new());
+    let mut favorites = Ini::load_from_file(rbr_sync.favorites_file.clone()).unwrap_or_default();
     favorites.delete(Some("FavoriteStages"));
 
     let selected_stages = rbr_sync
