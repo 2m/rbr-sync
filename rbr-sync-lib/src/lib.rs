@@ -3,7 +3,7 @@ use reqwest::{
     header::{self, InvalidHeaderValue},
     Url,
 };
-use serde::Deserialize;
+use serde::{Deserialize, Serialize};
 use thiserror::Error;
 use url::ParseError;
 
@@ -94,7 +94,7 @@ mod page {
     }
 }
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Serialize, Deserialize)]
 pub struct Stage {
     pub id: i32,
     pub title: String,

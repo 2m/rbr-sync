@@ -6,5 +6,8 @@ edition = "2021"
 [workspace]
 
 [dependencies]
+eframe = { version = "0.19.0", features = ["persistence"] }
+egui = "0.19.0"
 rbr-sync-lib = { path = "rbr-sync-lib" }
+serde = { version = "1.0.144", features = ["derive"] }
 tokio = { version = "1.21.1", features = ["full"] }
