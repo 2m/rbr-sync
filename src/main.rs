@@ -7,7 +7,8 @@ use std::{
     time::Duration,
 };
 
-use eframe::{egui, glow::FLOAT_VEC2};
+use eframe::egui;
+use ini::Ini;
 use rbr_sync_lib::{stages, Stage};
 use tokio::runtime::Runtime;
 
@@ -78,7 +79,7 @@ impl Default for RbrSync {
 
             selected_tags: HashSet::new(),
 
-            favorites_file: "".to_owned(),
+            favorites_file: favorites_file(),
         }
     }
 }
@@ -103,12 +104,77 @@ impl eframe::App for RbrSync {
                 .show(ui, |ui| {
                     self.contents(ui, ctx);
                 });
+        });
+    }
+}
 
-            ui.separator();
+pub fn favorites_file() -> String {
+    let fav_path = if cfg!(target_os = "windows") {
+        let stdout = Command::new("cmd")
+            .args(["/C", r#"reg query "HKEY_LOCAL_MACHINE\SOFTWARE\WOW6432Node\Rallysimfans RBR" /v InstallPath"#])
+            .output()
+            .expect("failed to execute process")
+            .stdout;
+        let reg_output = String::from_utf8(stdout).expect("Unable to parse output");
+        let fav_dir = reg_output
+            .split("REG_SZ")
+            .last()
+            .expect("part not found")
+            .trim();
+        format!("{}\\rsfdata\\cache\\", fav_dir)
+    } else {
+        "".to_owned()
+    };
+    format!("{fav_path}favorites.ini")
+}
 
+impl RbrSync {
+    pub fn new(cc: &eframe::CreationContext<'_>) -> Self {
+        cc.egui_ctx.set_pixels_per_point(2.5);
+
+        if let Some(storage) = cc.storage {
+            return eframe::get_value(storage, eframe::APP_KEY).unwrap_or_default();
+        }
+
+        Default::default()
+    }
+
+    fn contents(&mut self, ui: &mut egui::Ui, ctx: &egui::Context) {
+        ui.heading("RBR Sync");
+        ui.allocate_space(egui::vec2(ui.available_width(), 0.0));
+
+        ui.end_row();
+
+        ui.label("Token: ");
+        ui.text_edit_singleline(&mut self.token);
+
+        ui.end_row();
+
+        ui.label("Notion DB ID: ");
+        ui.text_edit_singleline(&mut self.db_id);
+
+        ui.end_row();
+
+        ui.horizontal(|ui| {
+            if ui.button("Fetch tags").clicked() {
+                self.fetching = true;
+                self.stages = Vec::new();
+                fetch_stages(
+                    self.token.clone(),
+                    self.db_id.clone(),
+                    self.tx.clone(),
+                    ctx.clone(),
+                )
+            }
+            if self.fetching {
+                ui.spinner();
+            }
+        });
+
+        ui.vertical(|ui| {
             egui::ScrollArea::vertical()
                 .always_show_scroll(true)
-                .max_height(300.)
+                .min_scrolled_height(400.0)
                 .show(ui, |ui| {
                     let mut unique_tags = self
                         .stages
@@ -133,59 +199,7 @@ impl eframe::App for RbrSync {
                         }
                     }
                 });
-
-            ui.separator();
-
-            if ui.button("Write").clicked() {
-                println!("{:?}", self.selected_tags);
-            }
         });
-    }
-}
-
-pub fn favorites_file() -> String {
-    let fav_path = if cfg!(target_os = "windows") {
-        let stdout = Command::new("cmd")
-            .args(["/C", r#"reg query "HKEY_LOCAL_MACHINE\SOFTWARE\WOW6432Node\Rallysimfans RBR" /v InstallPath"#])
-            .output()
-            .expect("failed to execute process")
-            .stdout;
-        let reg_output = String::from_utf8(stdout).expect("Unable to parse output");
-        let fav_dir = reg_output.split("REG_SZ").last().expect("part not found");
-        format!("{}\\rsfdata\\cache\\", fav_dir)
-    } else {
-        "".to_owned()
-    };
-    format!("{}\\favorites.ini", fav_path)
-}
-
-impl RbrSync {
-    pub fn new(cc: &eframe::CreationContext<'_>) -> Self {
-        cc.egui_ctx.set_pixels_per_point(2.5);
-
-        if let Some(storage) = cc.storage {
-            return eframe::get_value(storage, eframe::APP_KEY).unwrap_or_default();
-        }
-
-        RbrSync {
-            favorites_file: favorites_file(),
-            ..Default::default()
-        }
-    }
-
-    fn contents(&mut self, ui: &mut egui::Ui, ctx: &egui::Context) {
-        ui.heading("RBR Sync");
-        ui.allocate_space(egui::vec2(ui.available_width(), 0.0));
-
-        ui.end_row();
-
-        ui.label("Token: ");
-        ui.text_edit_singleline(&mut self.token);
-
-        ui.end_row();
-
-        ui.label("Notion DB ID: ");
-        ui.text_edit_singleline(&mut self.db_id);
 
         ui.end_row();
 
@@ -194,20 +208,9 @@ impl RbrSync {
 
         ui.end_row();
 
-        if ui.button("Fetch tags").clicked() {
-            self.fetching = true;
-            fetch_stages(
-                self.token.clone(),
-                self.db_id.clone(),
-                self.tx.clone(),
-                ctx.clone(),
-            )
+        if ui.button("Write").clicked() {
+            write_stages(&self);
         }
-        if self.fetching {
-            ui.spinner();
-        }
-
-        ui.end_row();
     }
 }
 
@@ -221,4 +224,29 @@ fn fetch_stages(token: String, db_id: String, tx: Sender<Vec<Stage>>, ctx: egui:
         let _ = tx.send(stages);
         ctx.request_repaint();
     });
+}
+
+fn write_stages(rbr_sync: &RbrSync) {
+    let mut favorites = Ini::load_from_file(rbr_sync.favorites_file.clone()).unwrap_or(Ini::new());
+    favorites.delete(Some("FavoriteStages"));
+
+    let selected_stages = rbr_sync
+        .stages
+        .iter()
+        .filter(|stage| {
+            !rbr_sync
+                .selected_tags
+                .is_disjoint(&stage.tags.clone().into_iter().collect::<HashSet<String>>())
+        })
+        .collect::<Vec<&Stage>>();
+
+    for stage in selected_stages {
+        favorites
+            .with_section(Some("FavoriteStages"))
+            .set(stage.id.to_string(), "f");
+    }
+
+    favorites
+        .write_to_file(rbr_sync.favorites_file.clone())
+        .unwrap();
 }
