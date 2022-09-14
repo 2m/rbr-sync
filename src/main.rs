@@ -2,11 +2,12 @@
 
 use std::{
     collections::HashSet,
+    process::Command,
     sync::mpsc::{Receiver, Sender},
     time::Duration,
 };
 
-use eframe::egui;
+use eframe::{egui, glow::FLOAT_VEC2};
 use rbr_sync_lib::{stages, Stage};
 use tokio::runtime::Runtime;
 
@@ -56,6 +57,9 @@ struct RbrSync {
     stages: Vec<Stage>,
 
     selected_tags: HashSet<String>,
+
+    #[serde(skip)]
+    favorites_file: String,
 }
 
 impl Default for RbrSync {
@@ -73,6 +77,8 @@ impl Default for RbrSync {
             stages: Vec::new(),
 
             selected_tags: HashSet::new(),
+
+            favorites_file: "".to_owned(),
         }
     }
 }
@@ -137,6 +143,22 @@ impl eframe::App for RbrSync {
     }
 }
 
+pub fn favorites_file() -> String {
+    let fav_path = if cfg!(target_os = "windows") {
+        let stdout = Command::new("cmd")
+            .args(["/C", r#"reg query "HKEY_LOCAL_MACHINE\SOFTWARE\WOW6432Node\Rallysimfans RBR" /v InstallPath"#])
+            .output()
+            .expect("failed to execute process")
+            .stdout;
+        let reg_output = String::from_utf8(stdout).expect("Unable to parse output");
+        let fav_dir = reg_output.split("REG_SZ").last().expect("part not found");
+        format!("{}\\rsfdata\\cache\\", fav_dir)
+    } else {
+        "".to_owned()
+    };
+    format!("{}\\favorites.ini", fav_path)
+}
+
 impl RbrSync {
     pub fn new(cc: &eframe::CreationContext<'_>) -> Self {
         cc.egui_ctx.set_pixels_per_point(2.5);
@@ -145,7 +167,10 @@ impl RbrSync {
             return eframe::get_value(storage, eframe::APP_KEY).unwrap_or_default();
         }
 
-        Default::default()
+        RbrSync {
+            favorites_file: favorites_file(),
+            ..Default::default()
+        }
     }
 
     fn contents(&mut self, ui: &mut egui::Ui, ctx: &egui::Context) {
@@ -161,6 +186,11 @@ impl RbrSync {
 
         ui.label("Notion DB ID: ");
         ui.text_edit_singleline(&mut self.db_id);
+
+        ui.end_row();
+
+        ui.label("Favorites file: ");
+        ui.label(self.favorites_file.as_str());
 
         ui.end_row();
 
