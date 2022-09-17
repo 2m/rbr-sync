@@ -110,8 +110,13 @@ impl eframe::App for RbrSync {
 
 pub fn favorites_file() -> String {
     let fav_path = if cfg!(target_os = "windows") {
-        let stdout = Command::new("cmd")
-            .args(["/C", r#"reg query "HKEY_LOCAL_MACHINE\SOFTWARE\WOW6432Node\Rallysimfans RBR" /v InstallPath"#])
+        let stdout = Command::new("reg")
+            .args([
+                "query",
+                "HKEY_LOCAL_MACHINE\\SOFTWARE\\WOW6432Node\\Rallysimfans RBR",
+                "/v",
+                "InstallPath",
+            ])
             .output()
             .expect("failed to execute process")
             .stdout;
