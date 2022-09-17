@@ -130,8 +130,6 @@ pub fn favorites_file() -> String {
 
 impl RbrSync {
     pub fn new(cc: &eframe::CreationContext<'_>) -> Self {
-        cc.egui_ctx.set_pixels_per_point(2.5);
-
         if let Some(storage) = cc.storage {
             return eframe::get_value(storage, eframe::APP_KEY).unwrap_or_default();
         }
