@@ -1,0 +1,12 @@
+categories:
+- title: '🧰 Maintenance'
+  label: 'dependencies'
+
+change-template: '- $TITLE @$AUTHOR ([#$NUMBER]($URL))'
+
+template: |
+  ## What’s Changed
+  $CHANGES
+
+exclude-labels:
+- 'skip-changelog'
