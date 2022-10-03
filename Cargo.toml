@@ -12,3 +12,6 @@ rbr-sync-lib = { path = "rbr-sync-lib" }
 rust-ini = "0.18.0"
 serde = { version = "1.0.144", features = ["derive"] }
 tokio = { version = "1.21.1", features = ["full"] }
+
+[patch.crates-io]
+rust-ini = { git = "https://github.com/2m/rust-ini", branch = "fix/configurable-separator-2m" }
