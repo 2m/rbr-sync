@@ -8,7 +8,7 @@ use std::{
 };
 
 use eframe::egui;
-use ini::Ini;
+use ini::{Ini, WriteOption};
 use rbr_sync_lib::{stages, Stage};
 use tokio::runtime::Runtime;
 
@@ -266,6 +266,12 @@ fn write_stages(rbr_sync: &RbrSync) {
     }
 
     favorites
-        .write_to_file(rbr_sync.favorites_file.clone())
+        .write_to_file_opt(
+            rbr_sync.favorites_file.clone(),
+            WriteOption {
+                kv_separator: " = ",
+                ..Default::default()
+            },
+        )
         .unwrap();
 }
