@@ -29,8 +29,8 @@ fn main() {
 
     let options = eframe::NativeOptions {
         resizable: false,
-        initial_window_size: Some([500.0, 700.0].into()),
-        max_window_size: Some([500.0, 700.0].into()),
+        initial_window_size: Some([500.0, 400.0].into()),
+        max_window_size: Some([500.0, 400.0].into()),
         ..Default::default()
     };
 
@@ -52,6 +52,8 @@ struct RbrSync {
     rx: Receiver<Vec<Stage>>,
 
     token: String,
+    token_plaintext: bool,
+
     db_id: String,
 
     fetching: bool,
@@ -72,6 +74,8 @@ impl Default for RbrSync {
             rx,
 
             token: "".to_owned(),
+            token_plaintext: false,
+
             db_id: "".to_owned(),
 
             fetching: false,
@@ -149,7 +153,17 @@ impl RbrSync {
         ui.end_row();
 
         ui.label("Token: ");
-        ui.text_edit_singleline(&mut self.token);
+        ui.horizontal(|ui| {
+            ui.add(egui::TextEdit::singleline(&mut self.token).password(!self.token_plaintext));
+
+            if ui
+                .add(egui::SelectableLabel::new(self.token_plaintext, "👁"))
+                .on_hover_text("Show/hide password")
+                .clicked()
+            {
+                self.token_plaintext = !self.token_plaintext;
+            }
+        });
 
         ui.end_row();
 
@@ -158,7 +172,8 @@ impl RbrSync {
 
         ui.end_row();
 
-        ui.horizontal(|ui| {
+        ui.set_min_height(200.0);
+        ui.horizontal_top(|ui| {
             if ui.button("Fetch tags").clicked() {
                 self.fetching = true;
                 self.stages = Vec::new();
@@ -177,29 +192,31 @@ impl RbrSync {
         ui.vertical(|ui| {
             egui::ScrollArea::vertical()
                 .always_show_scroll(true)
-                .min_scrolled_height(400.0)
+                .auto_shrink([false; 2])
                 .show(ui, |ui| {
-                    let mut unique_tags = self
-                        .stages
-                        .iter()
-                        .flat_map(|s| s.tags.clone())
-                        .collect::<HashSet<String>>()
-                        .into_iter()
-                        .collect::<Vec<String>>();
-                    unique_tags.sort();
+                    ui.horizontal_wrapped(|ui| {
+                        let mut unique_tags = self
+                            .stages
+                            .iter()
+                            .flat_map(|s| s.tags.clone())
+                            .collect::<HashSet<String>>()
+                            .into_iter()
+                            .collect::<Vec<String>>();
+                        unique_tags.sort();
 
-                    for tag in unique_tags {
-                        if ui
-                            .add(egui::SelectableLabel::new(
-                                self.selected_tags.contains(&tag),
-                                tag.clone(),
-                            ))
-                            .clicked()
-                            && !self.selected_tags.insert(tag.clone())
-                        {
-                            self.selected_tags.remove(&tag);
+                        for tag in unique_tags {
+                            if ui
+                                .add(egui::SelectableLabel::new(
+                                    self.selected_tags.contains(&tag),
+                                    tag.clone(),
+                                ))
+                                .clicked()
+                                && !self.selected_tags.insert(tag.clone())
+                            {
+                                self.selected_tags.remove(&tag);
+                            }
                         }
-                    }
+                    });
                 });
         });
 
