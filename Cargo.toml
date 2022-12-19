@@ -10,7 +10,7 @@ eframe = { version = "0.20.1", features = ["persistence"] }
 egui = "0.20.1"
 rbr-sync-lib = { path = "rbr-sync-lib" }
 rust-ini = "0.18.0"
-serde = { version = "1.0.150", features = ["derive"] }
+serde = { version = "1.0.151", features = ["derive"] }
 tokio = { version = "1.23.0", features = ["full"] }
 
 [patch.crates-io]
