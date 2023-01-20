@@ -8,7 +8,6 @@ use std::{
 };
 
 use eframe::egui;
-use egui_extras;
 use ini::{Ini, WriteOption};
 use rbr_sync_lib::{stages, Stage};
 use tokio::runtime::Runtime;
