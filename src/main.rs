@@ -100,20 +100,19 @@ impl eframe::App for RbrSync {
     }
 
     fn update(&mut self, ctx: &egui::Context, _frame: &mut eframe::Frame) {
-        // Update the counter with the async response.
         if let Ok(stages) = self.rx.try_recv() {
             self.fetching = false;
             self.stages = stages;
         }
 
         egui::CentralPanel::default().show(ctx, |ui| {
-            egui::Grid::new("my_grid")
-                .num_columns(2)
-                .spacing([40.0, 4.0])
-                .striped(true)
-                .show(ui, |ui| {
-                    self.contents(ui, ctx);
-                });
+            self.inputs(ui);
+            ui.separator();
+
+            self.buttons(ui, ctx);
+            ui.separator();
+
+            self.outputs(ui);
         });
     }
 }
@@ -167,34 +166,51 @@ impl RbrSync {
         filtered
     }
 
-    fn contents(&mut self, ui: &mut egui::Ui, ctx: &egui::Context) {
-        ui.heading("RBR Sync");
-        ui.allocate_space(egui::vec2(ui.available_width(), 0.0));
+    fn inputs(&mut self, ui: &mut egui::Ui) {
+        egui::Grid::new("my_grid")
+            .num_columns(2)
+            .spacing([40.0, 4.0])
+            .striped(true)
+            .show(ui, |ui| {
+                ui.horizontal(|ui| {
+                    egui::widgets::global_dark_light_mode_switch(ui);
+                    ui.heading("RBR Sync");
+                });
+                ui.allocate_space(egui::vec2(ui.available_width(), 0.0));
 
-        ui.end_row();
+                ui.end_row();
 
-        ui.label("Token: ");
+                ui.label("Token: ");
+                ui.horizontal(|ui| {
+                    ui.add(
+                        egui::TextEdit::singleline(&mut self.token).password(!self.token_plaintext),
+                    );
+
+                    if ui
+                        .add(egui::SelectableLabel::new(self.token_plaintext, "👁"))
+                        .on_hover_text("Show/hide password")
+                        .clicked()
+                    {
+                        self.token_plaintext = !self.token_plaintext;
+                    }
+                });
+
+                ui.end_row();
+
+                ui.label("Notion DB ID: ");
+                ui.text_edit_singleline(&mut self.db_id);
+
+                ui.end_row();
+
+                ui.label("Favorites file: ");
+                ui.label(self.favorites_file.as_str());
+
+                ui.end_row();
+            });
+    }
+
+    fn buttons(&mut self, ui: &mut egui::Ui, ctx: &egui::Context) {
         ui.horizontal(|ui| {
-            ui.add(egui::TextEdit::singleline(&mut self.token).password(!self.token_plaintext));
-
-            if ui
-                .add(egui::SelectableLabel::new(self.token_plaintext, "👁"))
-                .on_hover_text("Show/hide password")
-                .clicked()
-            {
-                self.token_plaintext = !self.token_plaintext;
-            }
-        });
-
-        ui.end_row();
-
-        ui.label("Notion DB ID: ");
-        ui.text_edit_singleline(&mut self.db_id);
-
-        ui.end_row();
-
-        ui.set_min_height(200.0);
-        ui.horizontal_top(|ui| {
             if ui.button("Fetch tags").clicked() {
                 self.fetching = true;
                 self.stages = Vec::new();
@@ -208,109 +224,107 @@ impl RbrSync {
             if self.fetching {
                 ui.spinner();
             }
+            if ui
+                .button(format!("Write {} stages", self.filtered_stages().len()))
+                .clicked()
+            {
+                write_stages(self);
+            }
         });
+    }
 
-        ui.vertical(|ui| {
-            egui::ScrollArea::vertical()
-                .always_show_scroll(true)
-                .auto_shrink([false; 2])
-                .show(ui, |ui| {
-                    ui.horizontal_wrapped(|ui| {
-                        let mut unique_tags = self
-                            .stages
-                            .iter()
-                            .flat_map(|s| s.tags.clone())
-                            .collect::<HashSet<String>>()
-                            .into_iter()
-                            .collect::<Vec<String>>();
-                        unique_tags.sort();
+    fn outputs(&mut self, ui: &mut egui::Ui) {
+        use egui_extras::Size;
 
-                        for tag in unique_tags {
-                            if ui
-                                .add(tristate_label::TristateLabel::new(
-                                    self.include_tags.contains(&tag),
-                                    self.exclude_tags.contains(&tag),
-                                    tag.clone(),
-                                ))
-                                .clicked()
-                            {
-                                if self.include_tags.contains(&tag) {
-                                    self.include_tags.remove(&tag);
-                                    self.exclude_tags.insert(tag.clone());
-                                } else if self.exclude_tags.contains(&tag) {
-                                    self.exclude_tags.remove(&tag);
-                                } else {
-                                    self.include_tags.insert(tag.clone());
-                                }
+        egui_extras::StripBuilder::new(ui)
+            .size(Size::relative(0.3))
+            .size(Size::remainder())
+            .vertical(|mut strip| {
+                strip.cell(|ui| self.tags(ui));
+                strip.cell(|ui| self.stages(ui));
+            });
+    }
+
+    fn tags(&mut self, ui: &mut egui::Ui) {
+        egui::ScrollArea::vertical()
+            .auto_shrink([false; 2])
+            .show(ui, |ui| {
+                ui.horizontal_wrapped(|ui| {
+                    let mut unique_tags = self
+                        .stages
+                        .iter()
+                        .flat_map(|s| s.tags.clone())
+                        .collect::<HashSet<String>>()
+                        .into_iter()
+                        .collect::<Vec<String>>();
+                    unique_tags.sort();
+
+                    for tag in unique_tags {
+                        if ui
+                            .add(tristate_label::TristateLabel::new(
+                                self.include_tags.contains(&tag),
+                                self.exclude_tags.contains(&tag),
+                                tag.clone(),
+                            ))
+                            .clicked()
+                        {
+                            if self.include_tags.contains(&tag) {
+                                self.include_tags.remove(&tag);
+                                self.exclude_tags.insert(tag.clone());
+                            } else if self.exclude_tags.contains(&tag) {
+                                self.exclude_tags.remove(&tag);
+                            } else {
+                                self.include_tags.insert(tag.clone());
                             }
                         }
-                    });
+                    }
                 });
-        });
+            });
+    }
 
-        ui.end_row();
-
-        ui.label("Stages");
+    fn stages(&mut self, ui: &mut egui::Ui) {
         ui.vertical(|ui| {
             ui.push_id(777, |ui| {
-                egui::ScrollArea::horizontal()
-                    .always_show_scroll(true)
-                    .auto_shrink([false; 2])
-                    .show(ui, |ui| {
-                        use egui_extras::Column;
+                egui::ScrollArea::horizontal().show(ui, |ui| {
+                    use egui_extras::Column;
 
-                        let text_height = egui::TextStyle::Body.resolve(ui.style()).size;
+                    let text_height = egui::TextStyle::Body.resolve(ui.style()).size;
 
-                        egui_extras::TableBuilder::new(ui)
-                            .striped(true)
-                            .cell_layout(egui::Layout::left_to_right(egui::Align::Center))
-                            .column(Column::auto())
-                            .column(Column::auto())
-                            .column(Column::remainder())
-                            .header(text_height, |mut header| {
-                                header.col(|ui| {
-                                    ui.strong("ID");
-                                });
-                                header.col(|ui| {
-                                    ui.strong("Stage");
-                                });
-                                header.col(|ui| {
-                                    ui.strong("Labels");
-                                });
-                            })
-                            .body(|body| {
-                                body.rows(
-                                    text_height,
-                                    self.filtered_stages().len(),
-                                    |idx, mut row| {
-                                        row.col(|ui| {
-                                            ui.label(self.filtered_stages()[idx].id.to_string());
-                                        });
-                                        row.col(|ui| {
-                                            ui.label(self.filtered_stages()[idx].title.clone());
-                                        });
-                                        row.col(|ui| {
-                                            for tag in self.filtered_stages()[idx].tags.clone() {
-                                                ui.label(tag);
-                                            }
-                                        });
-                                    },
-                                );
+                    egui_extras::TableBuilder::new(ui)
+                        .striped(true)
+                        .cell_layout(egui::Layout::left_to_right(egui::Align::Center))
+                        .column(Column::auto())
+                        .column(Column::auto())
+                        .column(Column::remainder())
+                        .header(text_height, |mut header| {
+                            header.col(|ui| {
+                                ui.strong("ID");
                             });
-                    });
+                            header.col(|ui| {
+                                ui.strong("Stage");
+                            });
+                            header.col(|ui| {
+                                ui.strong("Labels");
+                            });
+                        })
+                        .body(|body| {
+                            body.rows(text_height, self.filtered_stages().len(), |idx, mut row| {
+                                row.col(|ui| {
+                                    ui.label(self.filtered_stages()[idx].id.to_string());
+                                });
+                                row.col(|ui| {
+                                    ui.label(self.filtered_stages()[idx].title.clone());
+                                });
+                                row.col(|ui| {
+                                    for tag in self.filtered_stages()[idx].tags.clone() {
+                                        ui.label(tag);
+                                    }
+                                });
+                            });
+                        });
+                });
             });
         });
-
-        ui.end_row();
-
-        ui.label("Favorites file: ");
-        ui.label(self.favorites_file.as_str());
-
-        ui.end_row();
-
-        if ui.button("Write").clicked() {
-            write_stages(self);
-        }
     }
 }
 
