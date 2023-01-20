@@ -8,9 +8,13 @@ use std::{
 };
 
 use eframe::egui;
+use egui_extras;
 use ini::{Ini, WriteOption};
 use rbr_sync_lib::{stages, Stage};
 use tokio::runtime::Runtime;
+
+mod widgets;
+pub use crate::widgets::tristate_label;
 
 fn main() {
     let rt = Runtime::new().expect("Unable to create Runtime");
@@ -28,9 +32,9 @@ fn main() {
     });
 
     let options = eframe::NativeOptions {
-        resizable: false,
+        resizable: true,
         initial_window_size: Some([500.0, 400.0].into()),
-        max_window_size: Some([500.0, 400.0].into()),
+        max_window_size: Some([500.0, 800.0].into()),
         ..Default::default()
     };
 
@@ -59,7 +63,8 @@ struct RbrSync {
     fetching: bool,
     stages: Vec<Stage>,
 
-    selected_tags: HashSet<String>,
+    include_tags: HashSet<String>,
+    exclude_tags: HashSet<String>,
 
     #[serde(skip)]
     favorites_file: String,
@@ -81,7 +86,8 @@ impl Default for RbrSync {
             fetching: false,
             stages: Vec::new(),
 
-            selected_tags: HashSet::new(),
+            include_tags: HashSet::new(),
+            exclude_tags: HashSet::new(),
 
             favorites_file: favorites_file(),
         }
@@ -146,6 +152,21 @@ impl RbrSync {
         Default::default()
     }
 
+    fn filtered_stages(&self) -> Vec<&Stage> {
+        let mut filtered = self
+            .stages
+            .iter()
+            .filter(|stage| self.include_tags.iter().any(|tag| stage.tags.contains(tag)))
+            .filter(|stage| {
+                self.exclude_tags
+                    .iter()
+                    .all(|tag| !stage.tags.contains(tag))
+            })
+            .collect::<Vec<&Stage>>();
+        filtered.sort_by(|a, b| a.title.as_str().cmp(b.title.as_str()));
+        filtered
+    }
+
     fn contents(&mut self, ui: &mut egui::Ui, ctx: &egui::Context) {
         ui.heading("RBR Sync");
         ui.allocate_space(egui::vec2(ui.available_width(), 0.0));
@@ -206,18 +227,78 @@ impl RbrSync {
 
                         for tag in unique_tags {
                             if ui
-                                .add(egui::SelectableLabel::new(
-                                    self.selected_tags.contains(&tag),
+                                .add(tristate_label::TristateLabel::new(
+                                    self.include_tags.contains(&tag),
+                                    self.exclude_tags.contains(&tag),
                                     tag.clone(),
                                 ))
                                 .clicked()
-                                && !self.selected_tags.insert(tag.clone())
                             {
-                                self.selected_tags.remove(&tag);
+                                if self.include_tags.contains(&tag) {
+                                    self.include_tags.remove(&tag);
+                                    self.exclude_tags.insert(tag.clone());
+                                } else if self.exclude_tags.contains(&tag) {
+                                    self.exclude_tags.remove(&tag);
+                                } else {
+                                    self.include_tags.insert(tag.clone());
+                                }
                             }
                         }
                     });
                 });
+        });
+
+        ui.end_row();
+
+        ui.label("Stages");
+        ui.vertical(|ui| {
+            ui.push_id(777, |ui| {
+                egui::ScrollArea::horizontal()
+                    .always_show_scroll(true)
+                    .auto_shrink([false; 2])
+                    .show(ui, |ui| {
+                        use egui_extras::Column;
+
+                        let text_height = egui::TextStyle::Body.resolve(ui.style()).size;
+
+                        egui_extras::TableBuilder::new(ui)
+                            .striped(true)
+                            .cell_layout(egui::Layout::left_to_right(egui::Align::Center))
+                            .column(Column::auto())
+                            .column(Column::auto())
+                            .column(Column::remainder())
+                            .header(text_height, |mut header| {
+                                header.col(|ui| {
+                                    ui.strong("ID");
+                                });
+                                header.col(|ui| {
+                                    ui.strong("Stage");
+                                });
+                                header.col(|ui| {
+                                    ui.strong("Labels");
+                                });
+                            })
+                            .body(|body| {
+                                body.rows(
+                                    text_height,
+                                    self.filtered_stages().len(),
+                                    |idx, mut row| {
+                                        row.col(|ui| {
+                                            ui.label(self.filtered_stages()[idx].id.to_string());
+                                        });
+                                        row.col(|ui| {
+                                            ui.label(self.filtered_stages()[idx].title.clone());
+                                        });
+                                        row.col(|ui| {
+                                            for tag in self.filtered_stages()[idx].tags.clone() {
+                                                ui.label(tag);
+                                            }
+                                        });
+                                    },
+                                );
+                            });
+                    });
+            });
         });
 
         ui.end_row();
@@ -249,17 +330,7 @@ fn write_stages(rbr_sync: &RbrSync) {
     let mut favorites = Ini::load_from_file(rbr_sync.favorites_file.clone()).unwrap_or_default();
     favorites.delete(Some("FavoriteStages"));
 
-    let selected_stages = rbr_sync
-        .stages
-        .iter()
-        .filter(|stage| {
-            !rbr_sync
-                .selected_tags
-                .is_disjoint(&stage.tags.clone().into_iter().collect::<HashSet<String>>())
-        })
-        .collect::<Vec<&Stage>>();
-
-    for stage in selected_stages {
+    for stage in rbr_sync.filtered_stages() {
         favorites
             .with_section(Some("FavoriteStages"))
             .set(stage.id.to_string(), "f");
