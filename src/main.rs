@@ -188,7 +188,7 @@ impl RbrSync {
 
                     if ui
                         .add(egui::SelectableLabel::new(self.token_plaintext, "👁"))
-                        .on_hover_text("Show/hide password")
+                        .on_hover_text("Show/hide token")
                         .clicked()
                     {
                         self.token_plaintext = !self.token_plaintext;
