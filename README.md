@@ -1,14 +1,17 @@
-# [rbr-sync](https://github.com/2m/rbr-sync)
+# [rbr-sync] [![ci-badge][]][ci]
 
-RBR Sync helps you to organize [RallySimFans]() favorite stages.
+RBR Sync helps you to organize [RallySimFans] favorite stages.
 It fetches stages from your Notion DB.
 Filters them according to the selected tags.
 And finnaly writes selected stage IDs to the RSF favorites file.
 
 ![demo]
 
+[rbr-sync]:     https://github.com/2m/rbr-sync
+[ci-badge]:     https://github.com/2m/rbr-sync/actions/workflows/ci.yaml/badge.svg
+[ci]:           https://github.com/2m/rbr-sync/actions/workflows/ci.yaml
 [RallySimFans]: https://www.rallysimfans.hu/rbr/index.php
-[demo]: docs/demo.gif
+[demo]:         docs/demo.gif
 
 ## Usage
 
