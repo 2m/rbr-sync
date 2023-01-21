@@ -7,13 +7,19 @@ on:
   pull_request:
 
 jobs:
-  test:
+  ci:
+    name: ci ${{ matrix.target }}
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        target: [x86_64-pc-windows-gnu, x86_64-apple-darwin]
     steps:
     - uses: actions/checkout@v3
     - uses: ibiqlik/action-yamllint@v3
 
     - run: rustup toolchain install 1.65 --profile minimal
+    - run: rustup target add ${{ matrix.target }}
     - run: rustup component add clippy
     - uses: Swatinem/rust-cache@v2
 
@@ -24,4 +30,4 @@ jobs:
       run: cargo test --all
 
     - name: Build
-      run: cargo build --release
+      run: cargo build --release --target ${{ matrix.target }}
