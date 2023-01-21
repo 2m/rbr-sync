@@ -37,7 +37,7 @@ jobs:
       with:
         fetch-depth: 0
 
-    - run: apt-get -y install libfontconfig1-dev
+    - run: sudo apt-get -y install libfontconfig1-dev
 
     - name: Set Cargo.toml version
       shell: bash
