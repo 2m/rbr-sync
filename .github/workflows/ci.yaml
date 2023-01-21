@@ -31,7 +31,8 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        target: [x86_64-pc-windows-gnu, x86_64-apple-darwin, x86_64-unknown-linux-musl]
+        # add x86_64-unknown-linux-musl when https://github.com/rust-build/rust-build.action/pull/60 is released
+        target: [x86_64-pc-windows-gnu, x86_64-apple-darwin]
     steps:
     - uses: actions/checkout@v3
       with:
@@ -47,7 +48,7 @@ jobs:
 
     - name: Build
       id: build
-      uses: rust-build/rust-build.action@master
+      uses: rust-build/rust-build.action@v1.4.0
       with:
         RUSTTARGET: ${{ matrix.target }}
         TOOLCHAIN_VERSION: "1.65"
