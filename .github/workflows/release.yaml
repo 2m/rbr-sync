@@ -11,9 +11,23 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
+        # add x86_64-unknown-linux-musl when https://github.com/rust-build/rust-build.action/pull/60 is released
         target: [x86_64-pc-windows-gnu, x86_64-apple-darwin]
     steps:
     - uses: actions/checkout@v3
+      with:
+        fetch-depth: 0
+
+    - name: Set Cargo.toml version
+      shell: bash
+      env:
+        RELEASE_TAG: ${{ github.ref }}
+      run: |
+        mv Cargo.toml Cargo.toml.orig
+        sed "s/0\\.0\\.0-git/${RELEASE_TAG##*\/v}/" Cargo.toml.orig >Cargo.toml
+        mv Cargo.lock Cargo.lock.orig
+        sed "s/0\\.0\\.0-git/${RELEASE_TAG##*\/v}/" Cargo.lock.orig >Cargo.lock
+
     - name: Compile and release
       uses: rust-build/rust-build.action@v1.4.0
       env:

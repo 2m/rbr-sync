@@ -7,8 +7,10 @@ on:
   pull_request:
 
 jobs:
-  test:
+  check:
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
     steps:
     - uses: actions/checkout@v3
     - uses: ibiqlik/action-yamllint@v3
@@ -23,5 +25,36 @@ jobs:
     - name: Test
       run: cargo test --all
 
+  build:
+    name: ${{ matrix.target }}
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        # add x86_64-unknown-linux-musl when https://github.com/rust-build/rust-build.action/pull/60 is released
+        target: [x86_64-pc-windows-gnu, x86_64-apple-darwin]
+    steps:
+    - uses: actions/checkout@v3
+      with:
+        fetch-depth: 0
+
+    - name: Set Cargo.toml version
+      shell: bash
+      run: |
+        mv Cargo.toml Cargo.toml.orig
+        sed "s/0\\.0\\.0-git/$(git describe --tags)/" Cargo.toml.orig >Cargo.toml
+        mv Cargo.lock Cargo.lock.orig
+        sed "s/0\\.0\\.0-git/$(git describe --tags)/" Cargo.lock.orig >Cargo.lock
+
     - name: Build
-      run: cargo build --release
+      id: build
+      uses: rust-build/rust-build.action@v1.4.0
+      with:
+        RUSTTARGET: ${{ matrix.target }}
+        TOOLCHAIN_VERSION: "1.65"
+        UPLOAD_MODE: none
+
+    - uses: actions/upload-artifact@v3
+      with:
+        name: rbr-sync-${{ matrix.target }}
+        path: ${{ steps.build.outputs.BUILT_ARCHIVE }}
