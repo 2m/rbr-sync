@@ -17,8 +17,6 @@ jobs:
       with:
         fetch-depth: 0
 
-    - run: sudo apt-get -y install libfontconfig1-dev
-
     - name: Set Cargo.toml version
       shell: bash
       env:
@@ -30,7 +28,7 @@ jobs:
         sed "s/0\\.0\\.0-git/${RELEASE_TAG##*\/v}/" Cargo.lock.orig >Cargo.lock
 
     - name: Compile and release
-      uses: rust-build/rust-build.action@v1.4.0
+      uses: rust-build/rust-build.action@master
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       with:

@@ -37,8 +37,6 @@ jobs:
       with:
         fetch-depth: 0
 
-    - run: sudo apt-get -y install libfontconfig1-dev
-
     - name: Set Cargo.toml version
       shell: bash
       run: |
@@ -49,7 +47,7 @@ jobs:
 
     - name: Build
       id: build
-      uses: rust-build/rust-build.action@v1.4.0
+      uses: rust-build/rust-build.action@master
       with:
         RUSTTARGET: ${{ matrix.target }}
         TOOLCHAIN_VERSION: "1.65"
