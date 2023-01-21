@@ -38,6 +38,8 @@ jobs:
       with:
         fetch-depth: 0
 
+    - run: apt-get -y install libfontconfig1-dev
+
     - name: Set Cargo.toml version
       shell: bash
       run: |
@@ -56,5 +58,4 @@ jobs:
 
     - uses: actions/upload-artifact@v3
       with:
-        name: rbr-sync
         path: ${{ steps.build.outputs.BUILT_ARCHIVE }}
