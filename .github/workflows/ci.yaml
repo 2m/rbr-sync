@@ -56,5 +56,5 @@ jobs:
 
     - uses: actions/upload-artifact@v3
       with:
-        name: rbr-sync-${{ matrix.target }}.zip
+        name: rbr-sync-${{ matrix.target }}
         path: ${{ steps.build.outputs.BUILT_ARCHIVE }}
