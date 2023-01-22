@@ -15,6 +15,11 @@ use tokio::runtime::Runtime;
 mod widgets;
 pub use crate::widgets::tristate_label;
 
+pub mod built_info {
+    // The file has been placed there by the build script.
+    include!(concat!(env!("OUT_DIR"), "/built.rs"));
+}
+
 fn main() {
     let rt = Runtime::new().expect("Unable to create Runtime");
 
@@ -175,7 +180,7 @@ impl RbrSync {
                     egui::widgets::global_dark_light_mode_switch(ui);
                     ui.heading("RBR Sync");
                 });
-                ui.allocate_space(egui::vec2(ui.available_width(), 0.0));
+                ui.label(built_info::PKG_VERSION);
 
                 ui.end_row();
 
