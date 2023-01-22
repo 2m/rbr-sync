@@ -6,32 +6,35 @@ on:
 
 jobs:
   release:
-    name: release ${{ matrix.target }}
-    runs-on: ubuntu-latest
+    runs-on: windows-latest
     strategy:
       fail-fast: false
-      matrix:
-        # add x86_64-unknown-linux-musl when https://github.com/rust-build/rust-build.action/pull/60 is released
-        target: [x86_64-pc-windows-gnu, x86_64-apple-darwin]
     steps:
     - uses: actions/checkout@v3
       with:
         fetch-depth: 0
+    - uses: Swatinem/rust-cache@v2
+    - uses: actions-rs/toolchain@v1
+      with:
+        profile: minimal
+        toolchain: 1.65
+        override: true
+    - uses: actions-rs/cargo@v1
+      with:
+        command: install
+        args: toml-cli
 
-    - name: Set Cargo.toml version
-      shell: bash
-      env:
-        RELEASE_TAG: ${{ github.ref }}
+    - shell: bash
       run: |
         mv Cargo.toml Cargo.toml.orig
-        sed "s/0\\.0\\.0-git/${RELEASE_TAG##*\/v}/" Cargo.toml.orig >Cargo.toml
-        mv Cargo.lock Cargo.lock.orig
-        sed "s/0\\.0\\.0-git/${RELEASE_TAG##*\/v}/" Cargo.lock.orig >Cargo.lock
+        toml set Cargo.toml.orig package.version "$(git describe --tags)" > Cargo.toml
 
-    - name: Compile and release
-      uses: rust-build/rust-build.action@v1.4.0
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    - uses: actions-rs/cargo@v1
       with:
-        RUSTTARGET: ${{ matrix.target }}
-        TOOLCHAIN_VERSION: "1.65"
+        command: build
+        args: --release
+
+    - name: Release
+      uses: softprops/action-gh-release@v1
+      with:
+        files: ./target/release/rbr-sync.exe
