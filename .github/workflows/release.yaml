@@ -15,14 +15,14 @@ jobs:
         fetch-depth: 0
     - uses: Swatinem/rust-cache@v2
     - uses: actions-rs/toolchain@v1
-        with:
-          profile: minimal
-          toolchain: 1.65
-          override: true
+      with:
+        profile: minimal
+        toolchain: 1.65
+        override: true
     - uses: actions-rs/cargo@v1
-        with:
-          command: install
-          args: toml-cli
+      with:
+        command: install
+        args: toml-cli
 
     - shell: bash
       run: |
