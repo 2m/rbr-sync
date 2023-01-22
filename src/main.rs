@@ -294,8 +294,12 @@ impl RbrSync {
                         .cell_layout(egui::Layout::left_to_right(egui::Align::Center))
                         .column(Column::auto())
                         .column(Column::auto())
+                        .column(Column::auto())
                         .column(Column::remainder())
                         .header(text_height, |mut header| {
+                            header.col(|ui| {
+                                ui.strong("#");
+                            });
                             header.col(|ui| {
                                 ui.strong("ID");
                             });
@@ -308,6 +312,9 @@ impl RbrSync {
                         })
                         .body(|body| {
                             body.rows(text_height, self.filtered_stages().len(), |idx, mut row| {
+                                row.col(|ui| {
+                                    ui.label((idx + 1).to_string());
+                                });
                                 row.col(|ui| {
                                     ui.label(self.filtered_stages()[idx].id.to_string());
                                 });
