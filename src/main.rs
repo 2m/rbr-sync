@@ -15,6 +15,11 @@ use tokio::runtime::Runtime;
 mod widgets;
 pub use crate::widgets::tristate_label;
 
+pub mod built_info {
+    // The file has been placed there by the build script.
+    include!(concat!(env!("OUT_DIR"), "/built.rs"));
+}
+
 fn main() {
     let rt = Runtime::new().expect("Unable to create Runtime");
 
@@ -175,7 +180,7 @@ impl RbrSync {
                     egui::widgets::global_dark_light_mode_switch(ui);
                     ui.heading("RBR Sync");
                 });
-                ui.allocate_space(egui::vec2(ui.available_width(), 0.0));
+                ui.label(built_info::PKG_VERSION);
 
                 ui.end_row();
 
@@ -294,8 +299,12 @@ impl RbrSync {
                         .cell_layout(egui::Layout::left_to_right(egui::Align::Center))
                         .column(Column::auto())
                         .column(Column::auto())
+                        .column(Column::auto())
                         .column(Column::remainder())
                         .header(text_height, |mut header| {
+                            header.col(|ui| {
+                                ui.strong("#");
+                            });
                             header.col(|ui| {
                                 ui.strong("ID");
                             });
@@ -308,6 +317,9 @@ impl RbrSync {
                         })
                         .body(|body| {
                             body.rows(text_height, self.filtered_stages().len(), |idx, mut row| {
+                                row.col(|ui| {
+                                    ui.label((idx + 1).to_string());
+                                });
                                 row.col(|ui| {
                                     ui.label(self.filtered_stages()[idx].id.to_string());
                                 });
