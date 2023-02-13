@@ -20,7 +20,7 @@ tokio = { version = "1.25.0", features = ["full"] }
 winres = "0.1"
 
 [build-dependencies]
-built = "0.5"
+built = "0.6"
 
 [patch.crates-io]
 rust-ini = { git = "https://github.com/2m/rust-ini", branch = "fix/configurable-separator-2m" }
