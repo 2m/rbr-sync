@@ -47,7 +47,8 @@ fn main() {
         "RBR Sync",
         options,
         Box::new(|cc| Box::new(RbrSync::new(cc))),
-    );
+    )
+    .unwrap();
 }
 
 #[derive(serde::Deserialize, serde::Serialize)]
