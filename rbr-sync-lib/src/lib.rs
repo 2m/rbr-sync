@@ -20,6 +20,8 @@ pub enum AppError {
 }
 
 mod database {
+    use std::collections::HashMap;
+
     use reqwest::{Client, Url};
     use serde::Deserialize;
 
@@ -31,16 +33,39 @@ mod database {
     #[derive(Debug, Deserialize)]
     pub struct Response {
         pub results: Vec<PropertyResult>,
+        pub has_more: bool,
+        pub next_cursor: Option<String>,
     }
 
-    pub async fn query(id: &str, client: &Client, url: &Url) -> Result<Response, crate::AppError> {
-        let resp = client
-            .post(url.join(format!("databases/{id}/query").as_str())?)
-            .send()
-            .await?
-            .json::<Response>()
-            .await?;
-        Ok(resp)
+    pub async fn query(
+        id: &str,
+        client: &Client,
+        url: &Url,
+    ) -> Result<Vec<PropertyResult>, crate::AppError> {
+        let mut results = Vec::new();
+        let mut has_more = true;
+        let mut start_cursor: Option<String> = None;
+
+        while has_more {
+            let mut body = HashMap::new();
+            if start_cursor.clone().is_some() {
+                body.insert("start_cursor", start_cursor.clone().unwrap());
+            }
+
+            let resp = client
+                .post(url.join(format!("databases/{id}/query").as_str())?)
+                .json(&body)
+                .send()
+                .await?
+                .json::<Response>()
+                .await?;
+
+            results.extend(resp.results);
+            has_more = resp.has_more;
+            start_cursor = resp.next_cursor;
+        }
+
+        Ok(results)
     }
 }
 
@@ -118,8 +143,8 @@ pub async fn stages(token: &str, db_id: &str) -> Result<Vec<Stage>, AppError> {
         .default_headers(headers)
         .build()?;
 
-    let db = database::query(db_id, &client, &url).await?;
-    let stages_future = db.results.iter().map(|result| async {
+    let results = database::query(db_id, &client, &url).await?;
+    let stages_future = results.iter().map(|result| async {
         let id = page::property::<page::Number>("ID", result.id.as_str(), &client, &url);
         let name = page::property::<page::Title>("Name", result.id.as_str(), &client, &url);
         let tags = page::property::<page::MultiSelect>("Tags", result.id.as_str(), &client, &url);
