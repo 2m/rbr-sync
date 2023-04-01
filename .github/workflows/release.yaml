@@ -14,21 +14,14 @@ jobs:
       with:
         fetch-depth: 0
     - uses: Swatinem/rust-cache@v2
-    - uses: actions-rs/toolchain@v1
-    - uses: actions-rs/cargo@v1
-      with:
-        command: install
-        args: toml-cli
+    - run: cargo install toml-cli
 
     - shell: bash
       run: |
         mv Cargo.toml Cargo.toml.orig
         toml set Cargo.toml.orig package.version "$(git describe --tags)" > Cargo.toml
 
-    - uses: actions-rs/cargo@v1
-      with:
-        command: build
-        args: --release
+    - run: cargo build --release
 
     - name: Release
       uses: softprops/action-gh-release@v1
