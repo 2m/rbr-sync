@@ -9,7 +9,7 @@ build = "build.rs"
 [dependencies]
 eframe = { version = "0.22.0", features = ["persistence"] }
 egui = "0.22.0"
-egui_extras = "0.21.0"
+egui_extras = "0.22.0"
 rbr-sync-lib = { path = "rbr-sync-lib" }
 rust-ini = "0.18.0"
 serde = { version = "1.0.163", features = ["derive"] }
