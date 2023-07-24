@@ -12,7 +12,7 @@ egui = "0.22.0"
 egui_extras = "0.22.0"
 rbr-sync-lib = { path = "rbr-sync-lib" }
 rust-ini = "0.18.0"
-serde = { version = "1.0.171", features = ["derive"] }
+serde = { version = "1.0.175", features = ["derive"] }
 tokio = { version = "1.29.1", features = ["full"] }
 
 [target.'cfg(windows)'.build-dependencies]
