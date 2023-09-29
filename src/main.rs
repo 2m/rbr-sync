@@ -8,6 +8,7 @@ use std::{
 };
 
 use eframe::egui;
+use egui_notify::Toasts;
 use ini::{Ini, WriteOption};
 use rbr_sync_lib::{stages, Stage};
 use tokio::runtime::Runtime;
@@ -56,9 +57,12 @@ fn main() {
 struct RbrSync {
     // Sender/Receiver for async notifications.
     #[serde(skip)]
-    tx: Sender<Vec<Stage>>,
+    tx: Sender<Result<Vec<Stage>, rbr_sync_lib::AppError>>,
     #[serde(skip)]
-    rx: Receiver<Vec<Stage>>,
+    rx: Receiver<Result<Vec<Stage>, rbr_sync_lib::AppError>>,
+
+    #[serde(skip)]
+    toasts: Toasts,
 
     token: String,
     token_plaintext: bool,
@@ -83,6 +87,8 @@ impl Default for RbrSync {
             tx,
             rx,
 
+            toasts: Toasts::default(),
+
             token: "".to_owned(),
             token_plaintext: false,
 
@@ -105,9 +111,15 @@ impl eframe::App for RbrSync {
     }
 
     fn update(&mut self, ctx: &egui::Context, _frame: &mut eframe::Frame) {
-        if let Ok(stages) = self.rx.try_recv() {
+        if let Ok(result) = self.rx.try_recv() {
             self.fetching = false;
-            self.stages = stages;
+            match result {
+                Ok(stages) => self.stages = stages,
+                Err(error) => {
+                    println!("{}", error);
+                    self.toasts.error(format!("{}", error));
+                }
+            }
         }
 
         egui::CentralPanel::default().show(ctx, |ui| {
@@ -119,6 +131,8 @@ impl eframe::App for RbrSync {
 
             self.outputs(ui);
         });
+
+        self.toasts.show(ctx);
     }
 }
 
@@ -340,11 +354,14 @@ impl RbrSync {
     }
 }
 
-fn fetch_stages(token: String, db_id: String, tx: Sender<Vec<Stage>>, ctx: egui::Context) {
+fn fetch_stages(
+    token: String,
+    db_id: String,
+    tx: Sender<Result<Vec<Stage>, rbr_sync_lib::AppError>>,
+    ctx: egui::Context,
+) {
     tokio::spawn(async move {
-        let stages = stages(token.as_str(), db_id.as_str())
-            .await
-            .expect("Unable to parse response");
+        let stages = stages(token.as_str(), db_id.as_str()).await;
 
         // After parsing the response, notify the GUI thread of the new value.
         let _ = tx.send(stages);
