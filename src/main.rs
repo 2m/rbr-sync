@@ -118,7 +118,6 @@ impl eframe::App for RbrSync {
                 Err(error) => {
                     println!("{}", error);
                     self.toasts.error(format!("{}", error));
-                    ()
                 }
             }
         }

@@ -120,7 +120,7 @@ mod page {
             .send()
             .await?;
 
-        return crate::deserialize_successful_response(resp).await;
+        crate::deserialize_successful_response(resp).await
     }
 }
 
@@ -131,9 +131,9 @@ async fn deserialize_successful_response<T: DeserializeOwned>(
     let text = resp.text().await?;
 
     if status.is_success() {
-        return serde_json::from_str::<T>(&text).map_err(crate::AppError::DeserizalizationError);
+        serde_json::from_str::<T>(&text).map_err(crate::AppError::DeserizalizationError)
     } else {
-        return Err(crate::AppError::WrongResponseCode(status.into(), text));
+        Err(crate::AppError::WrongResponseCode(status.into(), text))
     }
 }
 
