@@ -1,9 +1,9 @@
 use futures::future::try_join_all;
 use reqwest::{
     header::{self, InvalidHeaderValue},
-    Url,
+    Response, Url,
 };
-use serde::{Deserialize, Serialize};
+use serde::{de::DeserializeOwned, Deserialize, Serialize};
 use thiserror::Error;
 use url::ParseError;
 
@@ -17,6 +17,12 @@ pub enum AppError {
 
     #[error("Invalid authorization token")]
     WrongToken(#[from] InvalidHeaderValue),
+
+    #[error("Received error from server. Status: {0}, body: {0}")]
+    WrongResponseCode(u16, String),
+
+    #[error("Unable to deserialize server response")]
+    DeserizalizationError(#[from] serde_json::Error),
 }
 
 mod database {
@@ -56,13 +62,13 @@ mod database {
                 .post(url.join(format!("databases/{id}/query").as_str())?)
                 .json(&body)
                 .send()
-                .await?
-                .json::<Response>()
                 .await?;
 
-            results.extend(resp.results);
-            has_more = resp.has_more;
-            start_cursor = resp.next_cursor;
+            let response = crate::deserialize_successful_response::<Response>(resp).await?;
+
+            results.extend(response.results);
+            has_more = response.has_more;
+            start_cursor = response.next_cursor;
         }
 
         Ok(results)
@@ -112,10 +118,22 @@ mod page {
         let resp = client
             .get(url.join(format!("pages/{page}/properties/{id}").as_str())?)
             .send()
-            .await?
-            .json::<T>()
             .await?;
-        Ok(resp)
+
+        return crate::deserialize_successful_response(resp).await;
+    }
+}
+
+async fn deserialize_successful_response<T: DeserializeOwned>(
+    resp: Response,
+) -> Result<T, crate::AppError> {
+    let status = resp.status();
+    let text = resp.text().await?;
+
+    if status.is_success() {
+        return serde_json::from_str::<T>(&text).map_err(crate::AppError::DeserizalizationError);
+    } else {
+        return Err(crate::AppError::WrongResponseCode(status.into(), text));
     }
 }
 
