@@ -1,12 +1,16 @@
-categories:
-- title: '🧰 Maintenance'
-  label: 'dependencies'
-
-change-template: '- $TITLE @$AUTHOR ([#$NUMBER]($URL))'
+name-template: $RESOLVED_VERSION
+tag-template: $RESOLVED_VERSION
 
 template: |
   ## What’s Changed
+
   $CHANGES
+
+categories:
+- title: '⬆️ Dependencies'
+  collapse-after: 3
+  labels:
+  - 'dependencies'
 
 exclude-labels:
 - 'skip-changelog'

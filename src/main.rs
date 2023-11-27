@@ -36,15 +36,16 @@ fn main() {
         })
     });
 
-    let viewport_builder = egui::ViewportBuilder {
-        resizable: Some(true),
-        inner_size: Some([500.0, 400.0].into()),
-        max_inner_size: Some([500.0, 800.0].into()),
-        ..egui::ViewportBuilder::default()
-    };
-
     let options = eframe::NativeOptions {
-        viewport: viewport_builder,
+        viewport: egui::ViewportBuilder {
+            resizable: Some(true),
+            inner_size: Some([500.0, 400.0].into()),
+            max_inner_size: Some([500.0, 800.0].into()),
+            icon: Some(std::sync::Arc::new(
+                eframe::icon_data::from_png_bytes(&include_bytes!("../icon.png")[..]).unwrap(),
+            )),
+            ..egui::ViewportBuilder::default()
+        },
         ..Default::default()
     };
 
