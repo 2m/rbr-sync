@@ -40,7 +40,7 @@ fn main() {
         viewport: egui::ViewportBuilder {
             resizable: Some(true),
             inner_size: Some([500.0, 400.0].into()),
-            max_inner_size: Some([500.0, 800.0].into()),
+            min_inner_size: Some([500.0, 400.0].into()),
             icon: Some(std::sync::Arc::new(
                 eframe::icon_data::from_png_bytes(&include_bytes!("../icon.png")[..]).unwrap(),
             )),
@@ -262,10 +262,14 @@ impl RbrSync {
         use egui_extras::Size;
 
         egui_extras::StripBuilder::new(ui)
-            .size(Size::relative(0.3))
+            .size(Size::remainder())
+            .size(Size::exact(12.0))
             .size(Size::remainder())
             .vertical(|mut strip| {
                 strip.cell(|ui| self.tags(ui));
+                strip.cell(|ui| {
+                    ui.separator();
+                });
                 strip.cell(|ui| self.stages(ui));
             });
     }
@@ -310,7 +314,7 @@ impl RbrSync {
     fn stages(&mut self, ui: &mut egui::Ui) {
         ui.vertical(|ui| {
             ui.push_id(777, |ui| {
-                egui::ScrollArea::horizontal().show(ui, |ui| {
+                egui::ScrollArea::both().show(ui, |ui| {
                     use egui_extras::Column;
 
                     let text_height = egui::TextStyle::Body.resolve(ui.style()).size;
