@@ -16,8 +16,5 @@ rust-ini = "0.20.0"
 serde = { version = "1.0.193", features = ["derive"] }
 tokio = { version = "1.34.0", features = ["full"] }
 
-[target.'cfg(windows)'.build-dependencies]
-winres = "0.1"
-
 [build-dependencies]
 built = "0.7"
