@@ -36,10 +36,15 @@ fn main() {
         })
     });
 
+    let viewport_builder = egui::ViewportBuilder {
+        resizable: Some(true),
+        inner_size: Some([500.0, 400.0].into()),
+        max_inner_size: Some([500.0, 800.0].into()),
+        ..egui::ViewportBuilder::default()
+    };
+
     let options = eframe::NativeOptions {
-        resizable: true,
-        initial_window_size: Some([500.0, 400.0].into()),
-        max_window_size: Some([500.0, 800.0].into()),
+        viewport: viewport_builder,
         ..Default::default()
     };
 
