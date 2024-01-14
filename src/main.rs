@@ -341,7 +341,8 @@ impl RbrSync {
                             });
                         })
                         .body(|body| {
-                            body.rows(text_height, self.filtered_stages().len(), |idx, mut row| {
+                            body.rows(text_height, self.filtered_stages().len(), |mut row| {
+                                let idx = row.index();
                                 row.col(|ui| {
                                     ui.label((idx + 1).to_string());
                                 });
