@@ -12,7 +12,7 @@ egui = "0.26.2"
 egui-notify = "0.13.0"
 egui_extras = "0.26.2"
 rbr-sync-lib = { path = "rbr-sync-lib" }
-rust-ini = "0.20.0"
+rust-ini = "0.21.0"
 serde = { version = "1.0.197", features = ["derive"] }
 tokio = { version = "1.36.0", features = ["full"] }
 
