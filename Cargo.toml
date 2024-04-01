@@ -14,7 +14,7 @@ egui_extras = "0.26.2"
 rbr-sync-lib = { path = "rbr-sync-lib" }
 rust-ini = "0.21.0"
 serde = { version = "1.0.197", features = ["derive"] }
-tokio = { version = "1.36.0", features = ["full"] }
+tokio = { version = "1.37.0", features = ["full"] }
 
 [build-dependencies]
 built = "0.7"
