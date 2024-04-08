@@ -8,7 +8,7 @@ build = "build.rs"
 
 [dependencies]
 eframe = { version = "0.27.1", features = ["persistence"] }
-egui = "0.27.1"
+egui = "0.27.2"
 egui-notify = "0.14.0"
 egui_extras = "0.27.1"
 rbr-sync-lib = { path = "rbr-sync-lib" }
