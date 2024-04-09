@@ -23,6 +23,12 @@ pub enum AppError {
 
     #[error("Unable to deserialize server response")]
     DeserizalizationError(#[from] serde_json::Error),
+
+    #[error("Found a stage without an ID. Make sure all stages have an 'ID' property set")]
+    MissingStageId(),
+
+    #[error("Found a stage without a name. Make sure all stages have a 'Name' property set")]
+    MissingStageTitle(),
 }
 
 mod database {
@@ -81,7 +87,7 @@ mod page {
 
     #[derive(Debug, Deserialize)]
     pub struct Number {
-        pub number: i32,
+        pub number: Option<i32>,
     }
 
     #[derive(Debug, Deserialize)]
@@ -168,11 +174,23 @@ pub async fn stages(token: &str, db_id: &str) -> Result<Vec<Stage>, AppError> {
         let tags = page::property::<page::MultiSelect>("Tags", result.id.as_str(), &client, &url);
 
         match (id.await, name.await, tags.await) {
-            (Ok(id), Ok(name), Ok(tags)) => Ok(Stage {
-                id: id.number,
-                title: name.results.first().unwrap().title.plain_text.clone(),
-                tags: tags.multi_select.iter().map(|t| t.name.clone()).collect(),
-            }),
+            (Ok(id), Ok(name), Ok(tags)) => {
+                let stage_id = match id.number {
+                    None => Err(AppError::MissingStageId()),
+                    Some(number) => Ok(number),
+                };
+
+                let stage_title = match name.results.first() {
+                    None => Err(AppError::MissingStageTitle()),
+                    Some(title) => Ok(title),
+                };
+
+                return Ok(Stage {
+                    id: stage_id?,
+                    title: stage_title?.title.plain_text.clone(),
+                    tags: tags.multi_select.iter().map(|t| t.name.clone()).collect(),
+                });
+            }
             (Err(err), _, _) => Err(err),
             (_, Err(err), _) => Err(err),
             (_, _, Err(err)) => Err(err),
