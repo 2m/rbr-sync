@@ -23,6 +23,14 @@ jobs:
 
     - run: cargo build --release
 
+    - uses: dlemstra/code-sign-action@v1
+      with:
+        # https://stackoverflow.com/a/47144138
+        certificate: "${{ secrets.CERTIFICATE }}"
+        password: "${{ secrets.CERTIFICATE_PASSWORD }}"
+        files: ./target/release/rbr-sync.exe
+        description: "rbr-sync"
+
     - name: Release
       uses: softprops/action-gh-release@v2
       with:
