@@ -53,7 +53,7 @@ fn main() {
     eframe::run_native(
         "RBR Sync",
         options,
-        Box::new(|cc| Box::new(RbrSync::new(cc))),
+        Box::new(|cc| Ok(Box::new(RbrSync::new(cc)))),
     )
     .unwrap();
 }
