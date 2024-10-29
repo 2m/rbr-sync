@@ -198,7 +198,7 @@ impl RbrSync {
             .striped(true)
             .show(ui, |ui| {
                 ui.horizontal(|ui| {
-                    egui::widgets::global_dark_light_mode_switch(ui);
+                    egui::widgets::global_theme_preference_switch(ui);
                     ui.heading("RBR Sync");
                 });
                 ui.label(built_info::PKG_VERSION);
