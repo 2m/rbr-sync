@@ -2,23 +2,23 @@ pub mod tristate_label {
 
     use eframe::egui::*;
 
-    pub struct TristateLabel {
+    pub struct TristateLabel<'a> {
         included: bool,
         excluded: bool,
-        label: egui::SelectableLabel,
+        label: egui::Button<'a>,
     }
 
-    impl TristateLabel {
+    impl<'a> TristateLabel<'a> {
         pub fn new(included: bool, excluded: bool, text: impl Into<WidgetText>) -> Self {
             Self {
                 included,
                 excluded,
-                label: SelectableLabel::new(included || excluded, text),
+                label: Button::selectable(included || excluded, text),
             }
         }
     }
 
-    impl Widget for TristateLabel {
+    impl<'a> Widget for TristateLabel<'a> {
         fn ui(self, ui: &mut Ui) -> Response {
             if self.included {
                 ui.style_mut().visuals.selection.bg_fill = green(ui);

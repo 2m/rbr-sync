@@ -212,7 +212,7 @@ impl RbrSync {
                     );
 
                     if ui
-                        .add(egui::SelectableLabel::new(self.token_plaintext, "👁"))
+                        .add(egui::Button::selectable(self.token_plaintext, "👁"))
                         .on_hover_text("Show/hide token")
                         .clicked()
                     {
