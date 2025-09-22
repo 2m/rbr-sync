@@ -18,7 +18,7 @@ eframe = { version = "0.32.3", default-features = false, features = [
 egui = { version = "0.32.0", default-features = false }
 egui-notify = "0.20.0"
 egui_extras = "0.32.3"
-wgpu = "25" # temporary fix for egui 0.32.x
+wgpu = "26" # temporary fix for egui 0.32.x
 rbr-sync-lib = { path = "rbr-sync-lib" }
 rust-ini = "0.21.3"
 serde = { version = "1.0.225", features = ["derive"] }
