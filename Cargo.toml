@@ -21,7 +21,7 @@ egui_extras = "0.32.3"
 wgpu = "25" # temporary fix for egui 0.32.x
 rbr-sync-lib = { path = "rbr-sync-lib" }
 rust-ini = "0.21.3"
-serde = { version = "1.0.226", features = ["derive"] }
+serde = { version = "1.0.228", features = ["derive"] }
 tokio = { version = "1.47.1", features = ["full"] }
 
 [build-dependencies]
