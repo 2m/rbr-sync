@@ -16,7 +16,7 @@ eframe = { version = "0.32.3", default-features = false, features = [
     "x11",
 ] }
 egui = { version = "0.32.0", default-features = false }
-egui-notify = "0.20.0"
+egui-notify = "0.21.0"
 egui_extras = "0.32.3"
 wgpu = "25" # temporary fix for egui 0.32.x
 rbr-sync-lib = { path = "rbr-sync-lib" }
