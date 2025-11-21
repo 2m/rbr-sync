@@ -8,7 +8,7 @@ pub mod tristate_label {
         label: egui::Button<'a>,
     }
 
-    impl<'a> TristateLabel<'a> {
+    impl TristateLabel<'_> {
         pub fn new(included: bool, excluded: bool, text: impl Into<WidgetText>) -> Self {
             Self {
                 included,
@@ -18,7 +18,7 @@ pub mod tristate_label {
         }
     }
 
-    impl<'a> Widget for TristateLabel<'a> {
+    impl Widget for TristateLabel<'_> {
         fn ui(self, ui: &mut Ui) -> Response {
             if self.included {
                 ui.style_mut().visuals.selection.bg_fill = green(ui);
