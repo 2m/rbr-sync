@@ -5,6 +5,11 @@ updates:
   directory: "/"
   schedule:
     interval: "weekly"
+  groups:
+    egui:
+      patterns:
+      - "egui*"
+      - "eframe*"
 - package-ecosystem: github-actions
   directory: /
   schedule:
