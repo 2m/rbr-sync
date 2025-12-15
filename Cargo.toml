@@ -7,7 +7,7 @@ build = "build.rs"
 [workspace]
 
 [dependencies]
-eframe = { version = "0.33.2", default-features = false, features = [
+eframe = { version = "0.33.3", default-features = false, features = [
     "persistence",
     "default_fonts",
     "wgpu",
@@ -17,7 +17,7 @@ eframe = { version = "0.33.2", default-features = false, features = [
 ] }
 egui = { version = "0.33.2", default-features = false }
 egui-notify = "0.21.0"
-egui_extras = "0.33.2"
+egui_extras = "0.33.3"
 wgpu = "27.0.1"
 rbr-sync-lib = { path = "rbr-sync-lib" }
 rust-ini = "0.21.3"
