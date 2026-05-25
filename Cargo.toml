@@ -25,4 +25,4 @@ serde = { version = "1.0.228", features = ["derive"] }
 tokio = { version = "1.52.3", features = ["full"] }
 
 [build-dependencies]
-built = "0.8.0"
+built = "0.8.1"
